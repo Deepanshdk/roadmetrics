@@ -276,14 +276,14 @@ export default function Camera() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-lg overflow-hidden">
+    <div className={`flex flex-col items-center justify-center min-h-screen ${isCapturing ? 'fixed inset-0 z-40 bg-black' : 'bg-gray-100 p-4'}`}>
+      <div className={`${isCapturing ? 'w-full h-full' : 'w-full max-w-md bg-white rounded-lg shadow-lg overflow-hidden'}`}>
         <div className="relative aspect-video bg-black">
           <video
             ref={videoRef}
             autoPlay
             playsInline
-            className="w-full h-full object-cover"
+            className={`w-full h-full object-cover ${isCapturing ? 'fixed inset-0 z-30' : ''}`}
           />
           {countdown !== null && (
             <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
@@ -291,7 +291,6 @@ export default function Camera() {
             </div>
           )}
         </div>
-
         <div className="p-4 space-y-4">
           <div className="space-y-2">
             <label
