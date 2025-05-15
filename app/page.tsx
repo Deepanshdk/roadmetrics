@@ -1,4 +1,10 @@
-import Camera from './Camera';
+'use client';
+
+import dynamic from 'next/dynamic';
+
+const Camera = dynamic(() => import('./Camera'), {
+  ssr: false,
+});
 
 export default function Home() {
   return (

@@ -7,7 +7,12 @@ export default function Camera() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [captureInterval, setCaptureInterval] = useState(5); // default 5 seconds
-  const [imagesCount, setImagesCount] = useState(0);
+  const [imagesCount, setImagesCount] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return parseInt(localStorage.getItem('roadmetrics_imagesCount') || '0', 10);
+    }
+    return 0;
+  });
   const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
   const [currentCameraId, setCurrentCameraId] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -208,7 +213,13 @@ export default function Camera() {
 
             downloadFromUrl(url, fileName);
 
-            setImagesCount((prev) => prev + 1);
+            setImagesCount((prev) => {
+              const newCount = prev + 1;
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('roadmetrics_imagesCount', newCount.toString());
+              }
+              return newCount;
+            });
           },
           "image/jpeg",
           0.9
@@ -226,7 +237,13 @@ export default function Camera() {
             const fileName = `${"roadmetrics"}_${Date.now()}_no_location.jpg`;
             const url = URL.createObjectURL(blob);
             downloadFromUrl(url, fileName);
-            setImagesCount((prev) => prev + 1);
+            setImagesCount((prev) => {
+              const newCount = prev + 1;
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('roadmetrics_imagesCount', newCount.toString());
+              }
+              return newCount;
+            });
           },
           "image/jpeg",
           0.9
@@ -342,7 +359,7 @@ export default function Camera() {
             {isCapturing && (
               <button
                 onClick={stopCapturing}
-                className="flex-1 py-2 px-4 bg-red-500 hover:bg-red-600 rounded-md text-white font-medium"
+                className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 py-3 px-6 bg-red-500 hover:bg-red-600 rounded-full text-white font-medium shadow-lg"
               >
                 Stop
               </button>
@@ -352,6 +369,17 @@ export default function Camera() {
           <div className="text-center text-sm text-gray-600">
             Images captured: {imagesCount}
           </div>
+          <button
+            onClick={() => {
+              setImagesCount(0);
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('roadmetrics_imagesCount', '0');
+              }
+            }}
+            className="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-800 font-medium mt-2"
+          >
+            Reset Count
+          </button>
         </div>
       </div>
     </div>
