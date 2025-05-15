@@ -173,8 +173,8 @@ export default function Camera() {
     }
 
     const canvas = document.createElement("canvas");
-    canvas.width = 1920; // default to 1920x1080
-    canvas.height = 1080;
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
     if (canvas.width === 0 || canvas.height === 0) {
       console.warn(
         `[DEBUG] captureImage (${source}): Canvas dimensions are zero. Video not ready?`
@@ -356,13 +356,20 @@ export default function Camera() {
               </button>
             )}
             {isCapturing && (
+              <>
               <button
                 onClick={stopCapturing}
                 className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 py-3 px-6 bg-red-500 hover:bg-red-600 rounded-full text-white font-medium shadow-lg"
               >
                 Stop
               </button>
+
+              <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 py-3 px-6 rounded-full text-white font-medium shadow-lg">
+                Count : {imagesCount}
+                </div>
+                </>
             )}
+
           </div>
 
           <div className="text-center text-sm text-gray-600">
