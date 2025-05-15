@@ -91,7 +91,7 @@ function convertToExifGpsCoordinate(
  * @param blob The blob to download
  * @param fileName The name to give the downloaded file
  */
-export function downloadUrl(url: string, fileName: string) {
+export function downloadFromUrl(url: string, fileName: string) {
   const a = document.createElement("a");
   a.href = url;
   a.download = fileName;

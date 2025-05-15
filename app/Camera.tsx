@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { addExifToBlob, downloadUrl } from "./helper";
+import { addExifToBlob, downloadFromUrl } from "./helper";
 
 export default function Camera() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [captureInterval, setCaptureInterval] = useState(5); // default 5 seconds
   const [imagesCount, setImagesCount] = useState(0);
+  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
+  const [currentCameraId, setCurrentCameraId] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const captureTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -16,9 +18,21 @@ export default function Camera() {
 
   const requestPermissions = useCallback(async () => {
     try {
+      // Get available cameras first
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter(device => device.kind === 'videoinput');
+      setAvailableCameras(cameras);
+      
+      // Use first camera by default if available
+      const facingMode = cameras.length > 1 ? { facingMode: 'environment' } : true;
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: facingMode,
       });
+      
+      // Set current camera ID
+      if (stream.getVideoTracks().length > 0) {
+        setCurrentCameraId(stream.getVideoTracks()[0].getSettings().deviceId || '');
+      }
       mediaStreamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -106,15 +120,9 @@ export default function Camera() {
     }
 
     isStartingCaptureRef.current = true;
-    console.log(
-      "[DEBUG] startCapturing: Entry. Set isStartingCaptureRef to true."
-    );
-
     setIsCapturing(true);
-    console.log("[DEBUG] startCapturing: setIsCapturing(true) called.");
 
     // Perform the first capture immediately
-    console.log("[DEBUG] startCapturing: Calling captureImage (IMMEDIATE)");
     captureImage("IMMEDIATE_FROM_START_CAPTURING");
 
     if (captureTimerRef.current) {
@@ -146,10 +154,6 @@ export default function Camera() {
       captureTimerRef.current
     );
 
-    // Reset the re-entrancy guard ref AFTER everything is set up
-    // Use a small timeout to ensure state updates have a chance to propagate
-    // though ideally, the flow should prevent needing this for isStartingCaptureRef.
-    // For now, let's set it directly. If issues persist, a timeout might be a workaround.
     isStartingCaptureRef.current = false;
     console.log("[DEBUG] startCapturing: Set isStartingCaptureRef to false.");
   };
@@ -202,7 +206,7 @@ export default function Camera() {
               longitude: longitude,
             });
 
-            downloadUrl(url, fileName);
+            downloadFromUrl(url, fileName);
 
             setImagesCount((prev) => prev + 1);
           },
@@ -212,8 +216,7 @@ export default function Camera() {
       },
       (error) => {
         console.error("Error getting location for image:", error.message);
-        // Fallback: capture image without location? Or skip capture?
-        // For now, let's capture without location if geolocation fails
+        // Capture without location if geolocation fails
         canvas.toBlob(
           (blob) => {
             if (!blob) {
@@ -222,7 +225,7 @@ export default function Camera() {
             }
             const fileName = `${"roadmetrics"}_${Date.now()}_no_location.jpg`;
             const url = URL.createObjectURL(blob);
-            downloadUrl(url, fileName);
+            downloadFromUrl(url, fileName);
             setImagesCount((prev) => prev + 1);
           },
           "image/jpeg",
@@ -253,9 +256,6 @@ export default function Camera() {
     setCountdown(null);
     setIsCapturing(false);
     isStartingCaptureRef.current = false; // Reset this guard too
-    console.log(
-      "[DEBUG] stopCapturing: setIsCapturing(false), reset isStartingCaptureRef."
-    );
   };
 
   return (
@@ -297,6 +297,35 @@ export default function Camera() {
           </div>
 
           <div className="flex space-x-2">
+            {availableCameras.length > 1 && (
+              <button
+                onClick={async () => {
+                  if (!currentCameraId || !mediaStreamRef.current) return;
+                  const currentIndex = availableCameras.findIndex(
+                    cam => cam.deviceId === currentCameraId
+                  );
+                  const nextIndex = (currentIndex + 1) % availableCameras.length;
+                  const nextCamera = availableCameras[nextIndex];
+                  
+                  // Stop current stream
+                  mediaStreamRef.current.getTracks().forEach(track => track.stop());
+                  
+                  // Start new stream with selected camera
+                  const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { deviceId: { exact: nextCamera.deviceId } }
+                  });
+                  mediaStreamRef.current = stream;
+                  if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                  }
+                  setCurrentCameraId(nextCamera.deviceId);
+                }}
+                className="flex-1 py-2 px-4 bg-gray-500 hover:bg-gray-600 rounded-md text-white font-medium"
+                disabled={isCapturing || countdown !== null}
+              >
+                Switch Camera
+              </button>
+            )}
             {!isCapturing && ( // Show Start button only if not capturing
               <button
                 onClick={startCountdown}
