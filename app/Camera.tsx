@@ -3,13 +3,16 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { addExifToBlob, downloadFromUrl } from "./helper";
 
+
+const imageCountKey = "roadtracking_imagesCount";
+
 export default function Camera() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [captureInterval, setCaptureInterval] = useState(5); // default 5 seconds
   const [imagesCount, setImagesCount] = useState(() => {
     if (typeof window !== 'undefined') {
-      return parseInt(localStorage.getItem('roadmetrics_imagesCount') || '0', 10);
+      return parseInt(localStorage.getItem(imageCountKey) || '0', 10);
     }
     return 0;
   });
@@ -216,13 +219,13 @@ export default function Camera() {
             setImagesCount((prev) => {
               const newCount = prev + 1;
               if (typeof window !== 'undefined') {
-                localStorage.setItem('roadmetrics_imagesCount', newCount.toString());
+                localStorage.setItem(imageCountKey, newCount.toString());
               }
               return newCount;
             });
           },
           "image/jpeg",
-          0.9
+          1
         );
       },
       (error) => {
@@ -240,7 +243,7 @@ export default function Camera() {
             setImagesCount((prev) => {
               const newCount = prev + 1;
               if (typeof window !== 'undefined') {
-                localStorage.setItem('roadmetrics_imagesCount', newCount.toString());
+                localStorage.setItem(imageCountKey, newCount.toString());
               }
               return newCount;
             });
@@ -365,7 +368,7 @@ export default function Camera() {
               </button>
 
               <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 py-3 px-6 rounded-full text-white font-medium shadow-lg">
-                Count : {imagesCount}
+                Image Count : {imagesCount}
                 </div>
                 </>
             )}
@@ -379,12 +382,12 @@ export default function Camera() {
             onClick={() => {
               setImagesCount(0);
               if (typeof window !== 'undefined') {
-                localStorage.setItem('roadmetrics_imagesCount', '0');
+                localStorage.setItem(imageCountKey, '0');
               }
             }}
             className="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-800 font-medium mt-2"
           >
-            Reset Count
+            Reset Images Count
           </button>
         </div>
       </div>
