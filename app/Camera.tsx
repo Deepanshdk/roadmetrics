@@ -34,7 +34,11 @@ export default function Camera() {
       // Use first camera by default if available
       const facingMode = cameras.length > 1 ? { facingMode: 'environment' } : true;
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: facingMode,
+        video: {
+          facingMode: cameras.length > 1 ? 'environment' : 'user',
+          width: { ideal: 1920 }, // Request ideal width
+          height: { ideal: 1080 } // Request ideal height
+        },
       });
       
       // Set current camera ID
@@ -331,7 +335,11 @@ export default function Camera() {
                   
                   // Start new stream with selected camera
                   const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { deviceId: { exact: nextCamera.deviceId } }
+                    video: {
+                      deviceId: { exact: nextCamera.deviceId },
+                      width: { ideal: 1920 }, // Request ideal width
+                      height: { ideal: 1080 } // Request ideal height
+                    }
                   });
                   mediaStreamRef.current = stream;
                   if (videoRef.current) {
